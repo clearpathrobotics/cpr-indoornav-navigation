@@ -29,7 +29,7 @@ class MoveGoalNode:
         rate = rospy.Rate(1)
         try:
             rospack = rospkg.RosPack()
-            script_path = f"{rospack.get_path('cpr_indoornav_navigation')[0]}/ros2/send_move_goal.bash"
+            script_path = f"{rospack.get_path('cpr_indoornav_navigation')ros2/send_move_goal.bash"
             move_goal_process = subprocess.Popen(
                 ["bash", script_path, str(req.x), str(req.y), str(req.orientation)],
                 stdout=subprocess.PIPE
