@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<launch>
+  <node pkg="cpr_indoornav_navigation" type="move_goal_node" name="indoornav_move_goal_node" />
+</launch>
