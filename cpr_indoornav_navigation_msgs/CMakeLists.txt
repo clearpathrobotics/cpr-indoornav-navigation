@@ -8,6 +8,21 @@ find_package(catkin REQUIRED
     std_msgs
 )
 
+add_message_files(
+  FILES
+    Marker.msg
+    Mission.msg
+    Place.msg
+    Task.msg
+)
+
+add_service_files(
+  FILES
+    GetMarkers.srv
+    GetMissions.srv
+    GetPlaces.srv
+)
+
 add_action_files(
   DIRECTORY
     action

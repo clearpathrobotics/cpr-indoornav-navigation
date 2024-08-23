@@ -1,0 +1,5 @@
+string id
+string name
+string place_type
+string primary_marker_intent
+cpr_indoornav_navigation_msgs/Marker primary_marker

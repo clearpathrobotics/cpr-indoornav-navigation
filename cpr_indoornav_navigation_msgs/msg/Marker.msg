@@ -1,0 +1,9 @@
+string id
+string name
+string type
+string item_type
+string marker_intent
+string notes
+float64 yaw
+float64 x
+float64 y
