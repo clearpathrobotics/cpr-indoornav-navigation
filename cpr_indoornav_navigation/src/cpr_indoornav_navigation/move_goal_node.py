@@ -40,6 +40,8 @@ class MoveGoalNode:
         get_places_srv = rospy.Service("~get_places", GetPlaces, self.handle_get_places)
 
         self.send_move_goal_srv.start()
+        self.move_to_marker_srv.start()
+        self.execute_mission_srv.start()
         rospy.spin()
 
     def on_move_to_location(self, req):
