@@ -69,7 +69,7 @@ class MoveGoalNode:
                 self.send_move_goal_srv.publish_feedback(fb)
                 state = STATE_RUNNING
             elif move_goal_process.returncode == 0:
-                rospy.logwarn("send_move_goal process reports goal reached")
+                rospy.loginfo("send_move_goal process reports goal reached")
                 state = STATE_DONE
             else:
                 rospy.logwarn(f"send_move_goal process exited with code {move_goal_process.returncode}")
@@ -116,7 +116,7 @@ class MoveGoalNode:
         for t in req.mission.tasks:
             if t.place.primary_marker_intent == "WAYPOINT":
                 goal = MoveToMarkerGoal()
-                goal.marker = t.place.primary_marker
+                goal.destination = t.place.primary_marker
 
                 fb = ExecuteMissionFeedback()
                 fb.current_goal = goal.marker
