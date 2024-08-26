@@ -2,89 +2,58 @@
 ROS action interface for programatically commanding an IndoorNav robot
 
 This package contains a single ROS 1 node that is intended to wrap the Indoor Nav ROS 2 API's
-`send_move_goal` example into a ROS 1 `actionlib` interface.
+`send_move_goal` example into a ROS 1 `actionlib` interface to make it easier to use IndoorNav
+with ROS 1 Noetic.
 
-To launch the node, run
+## Services
+
+The `indoornav_move_goal_node` provides 3 services for accessing waypoint & mission data defined
+in the IndoorNav GUI:
+- `get_markers`: get the list of all `Marker` objects defined in the map.
+  `Marker` objects can be sent to the `move_to_marker` action, defined below
+- `get_places`: an intermediate service used internally. `Place` objects contain a `primary_marker`
+  (`Marker` type) object, and are used to store the list of `Task` objects executed by a `Mission`.
+- `get_missions`: get the list of defined `Mission` objects ("Workflows") created in the GUI.
+  `Mission` objects can be executed using the `execute_mission` action, defined below.
+
+## Actions
+
+The `indoornav_move_goal_node` provides 3 actions for driving autonomously:
+- `move_to_location` accepts an arbitrary `(x, y, yaw`) position in meters (`x`, `y`) and radians (`yaw`)
+  relative to the `map` frame. This action is a loose wrapper for the ROS 2 API's `send_move_goal`
+  example, and uses the ROS 2 implementation internally.
+- `move_to_marker` accepts a `Marker` object, and will drive the robot to the specified `Marker` on
+  the map. Use this action if you want to manually step through a `Mission` to perform custom actions
+  at a given location (e.g. drive to the `Pickup` marker and then execute a manipulation action using
+  an arm and `MoveIt`)
+- `execute_mission` takes a `Mission` object and executes it, exactly as if it were selected from the
+  "Workflow" menu in the GUI. The robot will drive to each `Marker` defined in the `Mission`, one
+  after the other.
+
+## Installation & Launching
+
+The `cpr_indoornav_navigation` and `cpr_indoornav_navigation_msgs` packages must be installed on
+your Clearpath robot's primary computer.  (Jackal, Dingo-D, Dingo-O, Ridgeback, and Husky are all
+supported).
+
+To launch the node manually, run
 ```bash
 roslaunch cpr_indoornav_navigation move_goal_node.launch
 ```
 
-To get the list of Waypoint markers on the map, use the `get_markers` service:
+You may, if necessary, specify the hostname & TCP port of the IndoorNav computer if your configuration
+requires this, e.g.:
 ```bash
-$ rosservice call /indoornav_move_goal_node/get_markers
-markers: 
-  - 
-    id: "92bc7b80-5807-4e93-95ea-3b9a9d23525d"
-    name: "Laura's desk"
-    type: "Feature"
-    item_type: "WAYPOINT"
-    marker_intent: "WAYPOINT"
-    notes: ''
-    yaw: 0.15
-    x: 2.3113582259634384
-    y: -3.0388987205631146
-  - 
-    id: "7a6f0246-0cc7-4a11-92f0-bd7f0b140ad2"
-    name: "Lobby"
-    type: "Feature"
-    item_type: "WAYPOINT"
-    marker_intent: "WAYPOINT"
-    notes: ''
-    yaw: 1.7031853071795864
-    x: 11.684468932327853
-    y: 1.299512520668415
-  - 
-    id: "b17d2513-1dd1-417e-b841-48600fb688ea"
-    name: "Jason's desk"
-    type: "Feature"
-    item_type: "WAYPOINT"
-    marker_intent: "WAYPOINT"
-    notes: ''
-    yaw: -1.4452072139277519
-    x: 0.7808958607071048
-    y: 8.084568910849924
-  - 
-    id: "9a5ce76e-1284-4e47-b912-772a76835ddd"
-    name: "Water cooler"
-    type: "Feature"
-    item_type: "WAYPOINT"
-    marker_intent: "WAYPOINT"
-    notes: ''
-    yaw: -3.0
-    x: 8.023395130041493
-    y: 9.334741471330926
-  - 
-    id: "dfe23aed-96a3-417e-8c83-cd0128d8d477"
-    name: "Caffeteria"
-    type: "Feature"
-    item_type: "WAYPOINT"
-    marker_intent: "WAYPOINT"
-    notes: ''
-    yaw: -1.06
-    x: 3.132591873891343
-    y: 21.010673188478115
+roslaunch cpr_indoornav_navigation move_goal_node.launch hostname:=10.252.252.1 port:=5000
 ```
 
-These markers can be collected into missions/workflows. These can be queried with the `get_missions`
-service:
+To start the node as part of IndoorNav, run
 ```bash
-
+rosrun robot_upstart install --job cpr-indoornav --augment cpr_indoornav_navigation/launch/move_goal_node.launch
+sudo systemctl daemon-reload
+sudo systemctl restart cpr-indoornav
 ```
 
-To send a goal to the action server, either publish to the goal topic directly, or implement an
-`actionlib` client that uses the `MoveGoal` action:
-```bash
-rostopic pub /indoornav_move_goal_node/send_move_goal/goal cpr_indoornav_navigation_msgs/MoveGoalActionGoal goal:
-  destination:
-    id: "dfe23aed-96a3-417e-8c83-cd0128d8d477"
-    name: "Caffeteria"
-    type: "Feature"
-    item_type: "WAYPOINT"
-    marker_intent: "WAYPOINT"
-    notes: ''
-    yaw: -1.06
-    x: 3.132591873891343
-    y: 21.010673188478115" -1
-```
-where `destination.x`, `destination.y`, and `destination.yaw` are passed directly to the ROS 2 API's
-`send_move_goal` executable.
+To access the actions and services from a remote workstation, install the `cpr_indoornav_navigation_msgs`
+package. Make sure to set the `ROS_MASTER_URI` environment variable to the Clearpath robot's ROS master
+as described in your robot's manual.

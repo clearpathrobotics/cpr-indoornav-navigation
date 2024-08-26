@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 <launch>
-  <arg name="map_hostname" default="10.252.252.1" />
-  <arg name="map_port" default="5000" />
+  <arg name="hostname" default="10.252.252.1" />
+  <arg name="port" default="5000" />
 
   <node pkg="cpr_indoornav_navigation" type="move_goal_node" name="indoornav_move_goal_node">
-    <param name="hostname" value="$(arg map_hostname)" />
-    <param name="port" value="$(arg map_port)" />
+    <param name="hostname" value="$(arg hostname)" />
+    <param name="port" value="$(arg port)" />
   </node>
 </launch>
