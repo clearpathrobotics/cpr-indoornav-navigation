@@ -99,7 +99,7 @@ class MoveGoalNode:
             marker_fb.is_driving = True
             self.move_to_marker_srv.publish_feedback(marker_fb)
 
-        client.send_goal(goal, feedback_cb = on_feedback())
+        client.send_goal(goal, feedback_cb = on_feedback)
         action_finished = client.wait_for_result()
         if action_finished:
             result = client.get_result()
