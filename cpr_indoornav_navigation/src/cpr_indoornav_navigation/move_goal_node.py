@@ -119,7 +119,7 @@ class MoveGoalNode:
                 goal.destination = t.place.primary_marker
 
                 fb = ExecuteMissionFeedback()
-                fb.current_goal = goal.marker
+                fb.current_goal = goal.destination
                 self.execute_mission_srv.publish_feedback(fb)
 
                 client.send_goal(goal)
@@ -127,14 +127,14 @@ class MoveGoalNode:
                 if not action_finished:
                     result = ExecuteMissionResult()
                     result.mission_complete = False
-                    self.execute_mission_srv.set_aborted(result, f"Sub-goal ID {goal.marker.id} did not finish")
+                    self.execute_mission_srv.set_aborted(result, f"Sub-goal ID {goal.destination.id} did not finish")
                     return
                 else:
                     action_result = client.get_result()
                     if not action_result.reached_goal:
                         result = ExecuteMissionResult()
                         result.mission_complete = False
-                        self.execute_mission_srv.set_aborted(result, f"Failed to reach sub-goal ID {goal.marker.id}")
+                        self.execute_mission_srv.set_aborted(result, f"Failed to reach sub-goal ID {goal.destination.id}")
                         return
                 
         result = ExecuteMissionResult()
