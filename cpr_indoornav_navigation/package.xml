@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>cpr_indoornav_navigation</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>The cpr_indoornav_navigation package</description>
   <maintainer email="civerachb@clearpathrobotics.com">Chris Iverach-Brereton</maintainer>
   <license>BSD</license>
