@@ -22,7 +22,15 @@ class MoveGoalNode:
         self.port = rospy.get_param("~port", 5000)
 
         self.send_move_goal_srv = actionlib.SimpleActionServer(
-            "~send_move_goal", MoveGoalAction, execute_cb=self.on_send_move_goal,
+            "~move_to_location", MoveToLocationAction, execute_cb=self.on_move_to_location,
+            auto_start=False
+        )
+        self.move_to_marker_srv = actionlib.SimpleActionServer(
+            "~move_to_marker", MoveToMarkerAction, execute_cb=self.on_move_to_marker,
+            auto_start=False
+        )
+        self.execute_mission_srv = actionlib.SimpleActionServer(
+            "~execute_mission", ExecuteMissionAction, execute_cb=self.on_execute_mission,
             auto_start=False
         )
 
@@ -34,7 +42,7 @@ class MoveGoalNode:
         self.send_move_goal_srv.start()
         rospy.spin()
 
-    def on_send_move_goal(self, req):
+    def on_move_to_location(self, req):
         STATE_RUNNING = 0
         STATE_ERR = -1
         STATE_DONE = 1
@@ -44,7 +52,7 @@ class MoveGoalNode:
             rospack = rospkg.RosPack()
             script_path = f"{rospack.get_path('cpr_indoornav_navigation')}/ros2/send_move_goal.bash"
             move_goal_process = subprocess.Popen(
-                ["bash", script_path, str(req.destination.x), str(req.destination.y), str(req.destination.yaw)],
+                ["bash", script_path, str(req.x), str(req.y), str(req.yaw)],
                 stdout=subprocess.PIPE
             )
             move_goal_process.communicate()
@@ -54,7 +62,7 @@ class MoveGoalNode:
         while state == STATE_RUNNING and not self.send_move_goal_srv.is_preempt_requested():
             rate.sleep()
             if move_goal_process.returncode is None:
-                fb = MoveGoalFeedback()
+                fb = MoveToLocationFeedback()
                 fb.is_driving = True
                 self.send_move_goal_srv.publish_feedback(fb)
                 state = STATE_RUNNING
@@ -65,7 +73,7 @@ class MoveGoalNode:
                 rospy.logwarn(f"send_move_goal process exited with code {move_goal_process.returncode}")
                 state = STATE_ERR
 
-        result = MoveGoalResult()
+        result = MoveToLocationResult()
         if self.send_move_goal_srv.is_preempt_requested():
             result.reached_goal = False
             self.send_move_goal_srv.set_preempted(result, "Move goal preemted")
@@ -75,6 +83,61 @@ class MoveGoalNode:
         else:
             result.reached_goal = False
             self.send_move_goal_srv.set_succeeded(result)
+
+    def on_move_to_marker(self, req):
+        client = actionlib.SimpleActionClient("~move_to_location", MoveToLocationAction)
+        client.wait_for_server()
+        goal = MoveToLocationGoal()
+        goal.x = req.destination.x
+        goal.y = req.destination.y
+        goal.yaw = req.destination.yaw
+
+        def on_feedback(fb):
+            marker_fb = MoveToMarkerFeedback()
+            marker_fb.is_driving = True
+            self.move_to_marker_srv.publish_feedback(marker_fb)
+
+        client.send_goal(goal, feedback_cb = on_feedback())
+        action_finished = client.wait_for_result()
+        if action_finished:
+            result = client.get_result()
+            marker_result = MoveToMarkerResult()
+            marker_result.reached_goal = result.reached_goal
+            self.move_to_marker_srv.set_succeeded(marker_result)
+        else:
+            self.move_to_marker_srv.set_preempted(result, "Marker goal preemted")
+
+    def on_execute_mission(self, req):
+        client = actionlib.SimpleActionClient("~move_to_marker", MoveToMarkerAction)
+        client.wait_for_server()
+
+        for t in req.mission.tasks:
+            if t.place.primary_marker_intent == "WAYPOINT":
+                goal = MoveToMarkerGoal()
+                goal.marker = t.place.primary_marker
+
+                fb = ExecuteMissionFeedback()
+                fb.current_goal = goal.marker
+                self.execute_mission_srv.publish_feedback(fb)
+
+                client.send_goal(goal)
+                action_finished = client.wait_for_result()
+                if not action_finished:
+                    result = ExecuteMissionResult()
+                    result.mission_complete = False
+                    self.execute_mission_srv.set_aborted(result, f"Sub-goal ID {goal.marker.id} did not finish")
+                    return
+                else:
+                    action_result = client.get_result()
+                    if not action_result.reached_goal:
+                        result = ExecuteMissionResult()
+                        result.mission_complete = False
+                        self.execute_mission_srv.set_aborted(result, f"Failed to reach sub-goal ID {goal.marker.id}")
+                        return
+                
+        result = ExecuteMissionResult()
+        result.mission_complete = True
+        self.execute_mission_srv.set_succeeded(result)
 
     def handle_get_markers(self, req):
         raw_data = self.wget_json(f"http://{self.hostname}:{self.port}/api/v2/maps/markers")

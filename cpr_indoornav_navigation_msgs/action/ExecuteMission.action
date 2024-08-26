@@ -1,0 +1,5 @@
+cpr_indoornav_navigation_msgs/Mission mission
+---
+bool mission_complete
+---
+cpr_indoornav_navigation_msgs/Marker current_goal

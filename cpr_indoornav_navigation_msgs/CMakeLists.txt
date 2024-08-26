@@ -27,7 +27,9 @@ add_action_files(
   DIRECTORY
     action
   FILES
-    MoveGoal.action
+    ExecuteMission.action
+    MoveToLocation.action
+    MoveToMarker.action
 )
 
 generate_messages(
