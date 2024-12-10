@@ -136,7 +136,7 @@ class MoveGoalNode:
                         result.mission_complete = False
                         self.execute_mission_srv.set_aborted(result, f"Failed to reach sub-goal ID {goal.destination.id}")
                         return
-                
+
         result = ExecuteMissionResult()
         result.mission_complete = True
         self.execute_mission_srv.set_succeeded(result)
@@ -153,7 +153,7 @@ class MoveGoalNode:
                 m.name = jm["properties"]["name"]
                 m.item_type = jm["properties"]["item_type"]
                 m.marker_intent = jm["properties"]["marker_intent"]
-                m.notes = jm["properties"]["notes"]
+                m.notes = jm["properties"].get("notes", "")  # notes is an optional field
 
                 m.x = jm["geometry"]["coordinates"][0]
                 m.y = jm["geometry"]["coordinates"][1]
@@ -194,7 +194,7 @@ class MoveGoalNode:
             except Exception as err:
                 rospy.logwarn(f"Failed to parse mission: {err}")
 
-        return GetMissionsResponse(missions)        
+        return GetMissionsResponse(missions)
 
     def handle_get_places(self, req):
         markers = self.handle_get_markers(None).markers
